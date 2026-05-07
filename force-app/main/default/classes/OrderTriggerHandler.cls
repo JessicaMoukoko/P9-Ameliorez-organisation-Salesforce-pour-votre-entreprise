@@ -1,13 +1,5 @@
 public with sharing class OrderTriggerHandler {
 
-    public static void handleBeforeUpdate (List<Order> newOrders, Map<Id, Order> oldMap) {
-
-        Order newOrder= trigger.new[0];
-	    newOrder.NetAmount__c = newOrder.TotalAmount - newOrder.ShipmentCost__c;
-        // TODO - Implémenter la logique de mise à jour du CA dans le champ "Chiffre_d_affaire__c" du compte
-    }
-
-
 
 
     public static void handleAfterUpdate(List<Order> newOrders, Map<Id, Order> oldMap) {
