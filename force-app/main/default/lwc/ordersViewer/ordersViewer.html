@@ -1,0 +1,14 @@
+<template>
+  
+<template if:true={hasError}>
+    <div class="slds-box slds-theme_error" >
+        <h1>{hasErrorMessage}</h1>
+    </div>
+    </template>
+   
+<template if:true={hasSuccess}>
+    <div class="slds-box slds-theme_success" >
+        <h1>{ordertotalMessage} {sumOrdersOfCurrentAccount}</h1>
+    </div>
+</template>
+</template>
