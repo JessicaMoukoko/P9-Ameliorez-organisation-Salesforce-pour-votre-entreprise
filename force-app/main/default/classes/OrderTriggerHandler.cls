@@ -8,7 +8,7 @@ public with sharing class OrderTriggerHandler {
 
         // 1. Récupérer les comptes concernés
         for (Order ord : newOrders) {
-            if (ord.AccountId != null) {
+            if (ord.AccountId != null && ord.Status == 'Activated' && oldMap.get(ord.Id).Status != 'Activated') {
                 accountIds.add(ord.AccountId);
             }
         }
