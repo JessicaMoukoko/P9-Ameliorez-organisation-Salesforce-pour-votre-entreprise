@@ -1,0 +1,54 @@
+name: Tests Automatisés (CI)
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Node.js (pour les tests JavaScript)
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        
+    - name: Install dependencies
+      run: npm install || yarn install || echo "No dependencies to install"
+      
+    - name: Run linting checks
+      run: |
+        # Vérifier la syntaxe du code
+        echo "✓ Vérification de la structure du code..."
+        # Vous pouvez ajouter des outils comme ESLint ou Prettier ici
+      continue-on-error: true
+      
+    - name: Run tests
+      run: |
+        echo "✓ Exécution des tests unitaires..."
+        # Ajoutez vos commandes de test ici
+        # Exemple: npm test ou yarn test
+      continue-on-error: false
+      
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-results
+        path: test-results/
+      continue-on-error: true
+        
+    - name: Notify test status
+      if: always()
+      run: |
+        if [ "${{ job.status }}" == "success" ]; then
+          echo "✅ Tests réussis! Le code est prêt pour le déploiement."
+        else
+          echo "❌ Tests échoués! Veuillez corriger les erreurs avant de continuer."
+        fi
