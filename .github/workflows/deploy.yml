@@ -2,15 +2,14 @@ name: Déploiement Automatique (CD)
 
 on:
   push:
-    branches: [ main ]  # Déploiement automatique seulement sur main
+    branches: [ main ]
   workflow_run:
-    workflows: ["Tests Automatisés (CI)"]  # Déclenché après succès des tests
+    workflows: ["Tests Automatisés (CI)"]
     types: [completed]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    # Ne déployer que si les tests sont passés (pour workflow_run)
     if: |
       github.event_name == 'push' || 
       (github.event.workflow_run.conclusion == 'success')
@@ -28,15 +27,11 @@ jobs:
         SALESFORCE_AUTH_DEVICE_FLOW: true
       run: |
         echo "🔐 Authentification à Salesforce..."
-        # Option 1: Utiliser les credentials stockés dans les secrets GitHub
-
-            sfdx force:auth:jwt:grant \
-            --clientid="${{ secrets.SALESFORCE_CLIENT_ID }}" \
-            --username="${{ secrets.SALESFORCE_USERNAME }}" \
-           --setdefaultdevhubusername
+        sfdx force:auth:jwt:grant \
+          --clientid="${{ secrets.SALESFORCE_CLIENT_ID }}" \
+          --username="${{ secrets.SALESFORCE_USERNAME }}" \
+          --setdefaultdevhubusername
         
-        # Option 2: Utiliser le Device Flow (plus simple pour commencer)
-
         echo "⚠️  Configurez vos credentials Salesforce via GitHub Secrets"
         echo "   - SALESFORCE_CLIENT_ID"
         echo "   - SALESFORCE_CLIENT_SECRET"
@@ -45,20 +40,19 @@ jobs:
     - name: Validate deployment
       run: |
         echo "✓ Validation du code avant déploiement..."
-        # Vérifier que tous les fichiers sont présents
         ls -la force-app/ || echo "Structure Salesforce non trouvée"
         
-        - name: Deploy to Salesforce
-        run: |
-          echo "🚀 Déploiement en cours vers Salesforce..."
-          sf project deploy start --target-org=${{ secrets.SALESFORCE_ORG_ID }}
-          echo "✅ Déploiement terminé avec succès!"
+    - name: Deploy to Salesforce
+      run: |
+        echo "🚀 Déploiement en cours vers Salesforce..."
+        sf project deploy start --target-org=${{ secrets.SALESFORCE_ORG_ID }}
+        echo "✅ Déploiement terminé avec succès!"
       
-      - name: Run post-deployment tests
-        if: success()
-        run: |
-          echo "🧪 Exécution des tests post-déploiement..."
-          sf apex test run --target-org=${{ secrets.SALESFORCE_ORG_ID }}
+    - name: Run post-deployment tests
+      if: success()
+      run: |
+        echo "🧪 Exécution des tests post-déploiement..."
+        sf apex test run --target-org=${{ secrets.SALESFORCE_ORG_ID }}
         
     - name: Notify deployment status
       if: always()
@@ -74,6 +68,5 @@ jobs:
     - name: Cleanup
       if: always()
       run: |
-        # Nettoyer les fichiers sensibles
         rm -f server.key
         echo "🧹 Nettoyage effectué"
