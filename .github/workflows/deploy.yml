@@ -31,8 +31,8 @@ jobs:
         # Option 1: Utiliser les credentials stockés dans les secrets GitHub
 
             sfdx force:auth:jwt:grant \
-           --clientid= ${{ secrets.SALESFORCE_CLIENT_ID }} \
-           --username= ${{ secrets.SALESFORCE_USERNAME }} \
+            --clientid="${{ secrets.SALESFORCE_CLIENT_ID }}" \
+            --username="${{ secrets.SALESFORCE_USERNAME }}" \
            --setdefaultdevhubusername
         
         # Option 2: Utiliser le Device Flow (plus simple pour commencer)
@@ -48,20 +48,17 @@ jobs:
         # Vérifier que tous les fichiers sont présents
         ls -la force-app/ || echo "Structure Salesforce non trouvée"
         
-    - name: Deploy to Salesforce
-      run: |
-        echo "🚀 Déploiement en cours vers Salesforce..."
-        # Utilisez la commande appropriée selon votre configuration
-         sf project deploy start --target-org=${{ secrets.SALESFORCE_ORG_ID }}
-        
-        echo "✅ Déploiement terminé avec succès!"
-        
-    - name: Run post-deployment tests
-      if: success()
-      run: |
-        echo "🧪 Exécution des tests post-déploiement..."
-        # Vérifier que le déploiement s'est bien déroulé
-         sf apex test run --target-org=${{ secrets.SALESFORCE_ORG_ID }}
+        - name: Deploy to Salesforce
+        run: |
+          echo "🚀 Déploiement en cours vers Salesforce..."
+          sf project deploy start --target-org=${{ secrets.SALESFORCE_ORG_ID }}
+          echo "✅ Déploiement terminé avec succès!"
+      
+      - name: Run post-deployment tests
+        if: success()
+        run: |
+          echo "🧪 Exécution des tests post-déploiement..."
+          sf apex test run --target-org=${{ secrets.SALESFORCE_ORG_ID }}
         
     - name: Notify deployment status
       if: always()
