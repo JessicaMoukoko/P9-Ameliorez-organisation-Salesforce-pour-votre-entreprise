@@ -19,27 +19,20 @@ jobs:
       uses: actions/checkout@v4
       
     - name: Setup Salesforce CLI
-      run: |
-        npm install -g @salesforce/cli || echo "Salesforce CLI already installed"
+      run: npm install -g @salesforce/cli
         
-        - name: Authenticate to Salesforce
-        env:
-          SALESFORCE_CLIENT_ID: ${{ secrets.SALESFORCE_CLIENT_ID }}
-          SALESFORCE_CLIENT_SECRET: ${{ secrets.SALESFORCE_CLIENT_SECRET }}
-          SALESFORCE_USERNAME: ${{ secrets.SALESFORCE_USERNAME }}
-          SALESFORCE_PASSWORD: ${{ secrets.SALESFORCE_PASSWORD }}
-        run: |
-          echo "🔐 Authentification à Salesforce..."
-          sf org login oauth \
-            --client-id="${{ env.SALESFORCE_CLIENT_ID }}" \
-            --client-secret="${{ env.SALESFORCE_CLIENT_SECRET }}" \
-            --instance-url=https://login.salesforce.com \
-            --alias=devhub \
-            --set-default
-          
-          echo "⚠️  Vérifiez que vos credentials Salesforce sont configurés via GitHub Secrets"
-          echo "   - SALESFORCE_CLIENT_ID"
-          echo "   - SALESFORCE_CLIENT_SECRET"
+    - name: Authenticate to Salesforce
+      env:
+        SALESFORCE_CLIENT_ID: ${{ secrets.SALESFORCE_CLIENT_ID }}
+        SALESFORCE_CLIENT_SECRET: ${{ secrets.SALESFORCE_CLIENT_SECRET }}
+      run: |
+        echo "🔐 Authentification à Salesforce..."
+        sf org login oauth \
+          --client-id "${{ env.SALESFORCE_CLIENT_ID }}" \
+          --client-secret "${{ env.SALESFORCE_CLIENT_SECRET }}" \
+          --instance-url https://login.salesforce.com \
+          --alias devhub \
+          --set-default
         
     - name: Validate deployment
       run: |
@@ -48,15 +41,15 @@ jobs:
         
     - name: Deploy to Salesforce
       run: |
-        echo "🚀 Déploiement en cours vers Salesforce... "
-        sf project deploy start --target-org=devhub
+        echo "🚀 Déploiement en cours vers Salesforce..."
+        sf project deploy start --target-org devhub
         echo "✅ Déploiement terminé avec succès!"
       
     - name: Run post-deployment tests
       if: success()
       run: |
         echo "🧪 Exécution des tests post-déploiement..."
-        sf apex test run --target-org=devhub
+        sf apex test run --target-org devhub
         
     - name: Notify deployment status
       if: always()
