@@ -29,19 +29,18 @@ jobs:
       run: |
         echo "🔐 Authentification à Salesforce..."
         # Option 1: Utiliser les credentials stockés dans les secrets GitHub
-        # echo "${{ secrets.SALESFORCE_JWT_KEY_FILE }}" > server.key
-        # sfdx force:auth:jwt:grant \
-        #   --clientid=${{ secrets.SALESFORCE_CLIENT_ID }} \
-        #   --jwtkeyfile=server.key \
-        #   --username=${{ secrets.SALESFORCE_USERNAME }} \
-        #   --setdefaultdevhubusername
+
+            sfdx force:auth:jwt:grant \
+           --clientid= ${{ secrets.SALESFORCE_CLIENT_ID }} \
+           --username= ${{ secrets.SALESFORCE_USERNAME }} \
+           --setdefaultdevhubusername
         
         # Option 2: Utiliser le Device Flow (plus simple pour commencer)
+
         echo "⚠️  Configurez vos credentials Salesforce via GitHub Secrets"
         echo "   - SALESFORCE_CLIENT_ID"
         echo "   - SALESFORCE_CLIENT_SECRET"
         echo "   - SALESFORCE_USERNAME"
-        echo "   - SALESFORCE_JWT_KEY_FILE (optionnel)"
         
     - name: Validate deployment
       run: |
@@ -53,9 +52,7 @@ jobs:
       run: |
         echo "🚀 Déploiement en cours vers Salesforce..."
         # Utilisez la commande appropriée selon votre configuration
-        # sf project deploy start --target-org=${{ secrets.SALESFORCE_ORG_ID }}
-        # Ou pour un déploiement en mode test (recommandé):
-        # sf project deploy start --target-org=${{ secrets.SALESFORCE_ORG_ID }} --test-level=RunLocalTests
+         sf project deploy start --target-org=${{ secrets.SALESFORCE_ORG_ID }}
         
         echo "✅ Déploiement terminé avec succès!"
         
@@ -64,7 +61,7 @@ jobs:
       run: |
         echo "🧪 Exécution des tests post-déploiement..."
         # Vérifier que le déploiement s'est bien déroulé
-        # sf apex test run --target-org=${{ secrets.SALESFORCE_ORG_ID }}
+         sf apex test run --target-org=${{ secrets.SALESFORCE_ORG_ID }}
         
     - name: Notify deployment status
       if: always()
