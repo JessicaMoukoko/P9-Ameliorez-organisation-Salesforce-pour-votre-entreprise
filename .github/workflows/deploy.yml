@@ -25,14 +25,18 @@ jobs:
       env:
         SALESFORCE_CLIENT_ID: ${{ secrets.SALESFORCE_CLIENT_ID }}
         SALESFORCE_CLIENT_SECRET: ${{ secrets.SALESFORCE_CLIENT_SECRET }}
+        SALESFORCE_USERNAME: ${{ secrets.SALESFORCE_USERNAME }}
+        SALESFORCE_PASSWORD: ${{ secrets.SALESFORCE_PASSWORD }}
       run: |
         echo "🔐 Authentification à Salesforce..."
-        sf org login oauth \
+        
+        sf org login web \
           --client-id "${{ env.SALESFORCE_CLIENT_ID }}" \
           --client-secret "${{ env.SALESFORCE_CLIENT_SECRET }}" \
           --instance-url https://login.salesforce.com \
           --alias devhub \
-          --set-default
+          --set-default \
+          --no-prompt
         
     - name: Validate deployment
       run: |
@@ -65,5 +69,4 @@ jobs:
     - name: Cleanup
       if: always()
       run: |
-        rm -f server.key
         echo "🧹 Nettoyage effectué"
