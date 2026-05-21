@@ -23,14 +23,14 @@ jobs:
         
     - name: Authenticate to Salesforce
       env:
-        SALESFORCE_ACCESS_TOKEN: ${{ secrets.SALESFORCE_ACCESS_TOKEN }}
+        SF_ACCESS_TOKEN: ${{ secrets.SALESFORCE_ACCESS_TOKEN }}
         SALESFORCE_INSTANCE_URL: ${{ secrets.SALESFORCE_INSTANCE_URL }}
       run: |
         echo "🔐 Authentification à Salesforce..."
         
         sf org login access-token \
           --instance-url "${{ env.SALESFORCE_INSTANCE_URL }}" \
-          --access-token "${{ env.SALESFORCE_ACCESS_TOKEN }}" \
+          --no-prompt \
           --alias devhub \
           --set-default
         
