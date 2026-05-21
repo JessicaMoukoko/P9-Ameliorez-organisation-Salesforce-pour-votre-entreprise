@@ -24,18 +24,24 @@ jobs:
         
     - name: Authenticate to Salesforce
       env:
-        SALESFORCE_AUTH_DEVICE_FLOW: true
+        SALESFORCE_CLIENT_ID: ${{ secrets.SALESFORCE_CLIENT_ID }}
+        SALESFORCE_CLIENT_SECRET: ${{ secrets.SALESFORCE_CLIENT_SECRET }}
+        SALESFORCE_USERNAME: ${{ secrets.SALESFORCE_USERNAME }}
+        SALESFORCE_PASSWORD: ${{ secrets.SALESFORCE_PASSWORD }}
       run: |
         echo "🔐 Authentification à Salesforce..."
-        sfdx force:auth:jwt:grant \
-          --clientid="${{ secrets.SALESFORCE_CLIENT_ID }}" \
-          --username="${{ secrets.SALESFORCE_USERNAME }}" \
-          --setdefaultdevhubusername
+        sf org login user \
+          --client-id="${{ env.SALESFORCE_CLIENT_ID }}" \
+          --username="${{ env.SALESFORCE_USERNAME }}" \
+          --instance-url=https://login.salesforce.com \
+          --alias=devhub \
+          --set-default
         
-        echo "⚠️  Configurez vos credentials Salesforce via GitHub Secrets"
+        echo "⚠️  Vérifiez que vos credentials Salesforce sont configurés via GitHub Secrets"
         echo "   - SALESFORCE_CLIENT_ID"
         echo "   - SALESFORCE_CLIENT_SECRET"
         echo "   - SALESFORCE_USERNAME"
+        echo "   - SALESFORCE_PASSWORD"
         
     - name: Validate deployment
       run: |
@@ -45,14 +51,14 @@ jobs:
     - name: Deploy to Salesforce
       run: |
         echo "🚀 Déploiement en cours vers Salesforce..."
-        sf project deploy start --target-org=${{ secrets.SALESFORCE_ORG_ID }}
+        sf project deploy start --target-org=devhub
         echo "✅ Déploiement terminé avec succès!"
       
     - name: Run post-deployment tests
       if: success()
       run: |
         echo "🧪 Exécution des tests post-déploiement..."
-        sf apex test run --target-org=${{ secrets.SALESFORCE_ORG_ID }}
+        sf apex test run --target-org=devhub
         
     - name: Notify deployment status
       if: always()
