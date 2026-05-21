@@ -48,7 +48,7 @@ jobs:
         
     - name: Deploy to Salesforce
       run: |
-        echo "🚀 Déploiement en cours vers Salesforce..."
+        echo "🚀 Déploiement en cours vers Salesforce... "
         sf project deploy start --target-org=devhub
         echo "✅ Déploiement terminé avec succès!"
       
