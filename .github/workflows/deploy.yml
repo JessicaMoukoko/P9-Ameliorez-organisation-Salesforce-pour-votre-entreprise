@@ -107,20 +107,41 @@ jobs:
       run: |
         echo "🚀 Déploiement en cours vers Salesforce..."
         
+        # Afficher les orgs disponibles
+        echo "📋 Orgs authentifiées :"
+        sf org list
+        
+        # Afficher la structure du projet
+        echo ""
+        echo "📁 Structure du projet :"
+        ls -la force-app/ || echo "Dossier force-app non trouvé"
+        
+        # Effectuer le déploiement avec output détaillé
+        echo ""
+        echo "🔄 Démarrage du déploiement..."
+        
         DEPLOY_OUTPUT=$(sf project deploy start \
           --target-org devhub \
-          --wait 30 \
-          --json)
+          --wait 60 \
+          --json 2>&1)
         
         echo "$DEPLOY_OUTPUT" > deploy-result.json
         
-        # Vérifier le statut du déploiement
-        DEPLOY_STATUS=$(echo "$DEPLOY_OUTPUT" | grep -o '"status":"[^"]*"' | cut -d'"' -f4)
+        echo ""
+        echo "📊 Résultat du déploiement :"
+        echo "$DEPLOY_OUTPUT"
         
-        if [ "$DEPLOY_STATUS" == "Succeeded" ] || [ "$DEPLOY_STATUS" == "InProgress" ]; then
-          echo "✅ Déploiement lancé avec succès"
+        # Vérifier si le déploiement a réussi
+        if echo "$DEPLOY_OUTPUT" | grep -q '"status":"Succeeded"'; then
+          echo ""
+          echo "✅ Déploiement réussi"
+          echo "deploy-success=true" >> $GITHUB_OUTPUT
+        elif echo "$DEPLOY_OUTPUT" | grep -q '"status":"InProgress"'; then
+          echo ""
+          echo "⏳ Déploiement en cours"
           echo "deploy-success=true" >> $GITHUB_OUTPUT
         else
+          echo ""
           echo "❌ Erreur lors du déploiement"
           echo "deploy-success=false" >> $GITHUB_OUTPUT
           exit 1
