@@ -68,9 +68,14 @@ jobs:
         
     - name: Validate syntax and structure
       run: |
-        echo "🔍 Validation du code Salesforce..."
-        sf project validate deploy start --target-org devhub
-        echo "✅ Validation réussie"
+        echo "🔍 Validation du code Salesforce (dry-run)..."
+        
+        sf project deploy start \
+          --target-org devhub \
+          --dry-run \
+          --wait 30
+        
+        echo "✅ Validation réussie - Code prêt pour déploiement"
 
   # Job 3 : Déploiement en Salesforce
   deploy:
