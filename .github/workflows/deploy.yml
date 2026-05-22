@@ -131,12 +131,14 @@ jobs:
         echo "📊 Résultat du déploiement :"
         echo "$DEPLOY_OUTPUT"
         
-        # Vérifier si le déploiement a réussi
-        if echo "$DEPLOY_OUTPUT" | grep -q '"status":"Succeeded"'; then
+        # Vérifier si le déploiement a réussi (chercher "status": "Succeeded" avec espaces)
+        if echo "$DEPLOY_OUTPUT" | grep -q '"status".*"Succeeded"'; then
           echo ""
           echo "✅ Déploiement réussi"
+          DEPLOY_ID=$(echo "$DEPLOY_OUTPUT" | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4)
+          echo "Deploy ID: $DEPLOY_ID"
           echo "deploy-success=true" >> $GITHUB_OUTPUT
-        elif echo "$DEPLOY_OUTPUT" | grep -q '"status":"InProgress"'; then
+        elif echo "$DEPLOY_OUTPUT" | grep -q '"status".*"InProgress"'; then
           echo ""
           echo "⏳ Déploiement en cours"
           echo "deploy-success=true" >> $GITHUB_OUTPUT
