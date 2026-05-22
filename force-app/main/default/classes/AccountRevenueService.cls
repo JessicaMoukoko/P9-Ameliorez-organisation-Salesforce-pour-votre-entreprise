@@ -18,7 +18,7 @@ public class AccountRevenueService {
                 Chiffre_d_affaire__c = totalRevenue
             ));
         }
- // Mis a jour des comptes avec les nouveaux chiffres d'affaires calculés
+ // Mis a jour des comptes avec les nouveaux chiffres d'affaires calculés précédemment
         if (!accountsToUpdate.isEmpty()) {
             update accountsToUpdate;
         }
