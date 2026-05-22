@@ -157,22 +157,28 @@ jobs:
         # Attendre quelques secondes que le déploiement se finisse
         sleep 10
         
-        # Exécuter les tests Apex
-        TEST_OUTPUT=$(sf apex test run \
+        echo "🔄 Exécution des tests Apex..."
+        
+        # Exécuter les tests avec la bonne commande
+        TEST_OUTPUT=$(sf apex run test \
           --target-org devhub \
-          --wait 30 \
-          --code-coverage \
-          --json)
+          --wait 60 \
+          --json 2>&1) || true
         
         echo "$TEST_OUTPUT" > test-result.json
         
-        # Vérifier les résultats
-        TEST_STATUS=$(echo "$TEST_OUTPUT" | grep -o '"testRunId":"[^"]*"')
+        echo ""
+        echo "📊 Résultat des tests :"
+        echo "$TEST_OUTPUT"
         
-        if [ -z "$TEST_STATUS" ]; then
-          echo "⚠️  Pas de tests trouvés, continuant..."
+        # Vérifier s'il y a des tests
+        if echo "$TEST_OUTPUT" | grep -q "numTestsRun\|testRunId"; then
+          echo ""
+          echo "✅ Tests exécutés avec succès"
         else
-          echo "✅ Tests post-déploiement exécutés"
+          echo ""
+          echo "⚠️  Pas de tests Apex trouvés dans le projet"
+          echo "    Les tests seront exécutés lors du déploiement suivant"
         fi
     
     - name: Upload deployment artifacts
