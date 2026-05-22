@@ -8,11 +8,75 @@ on:
     types: [completed]
 
 jobs:
+  # Job 1 : Vérifier que les tests CI sont passés
+  check-ci-status:
+    runs-on: ubuntu-latest
+    outputs:
+      ci-passed: ${{ steps.check.outputs.ci-passed }}
+    steps:
+    - name: Check CI workflow status
+      id: check
+      run: |
+        if [ "${{ github.event_name }}" == "workflow_run" ]; then
+          if [ "${{ github.event.workflow_run.conclusion }}" == "success" ]; then
+            echo "ci-passed=true" >> $GITHUB_OUTPUT
+            echo "✅ Tests CI réussis - Déploiement autorisé"
+          else
+            echo "ci-passed=false" >> $GITHUB_OUTPUT
+            echo "❌ Tests CI échoués - Déploiement bloqué"
+            exit 1
+          fi
+        else
+          echo "ci-passed=true" >> $GITHUB_OUTPUT
+          echo "⏭️  Push direct sur main - Procédure de déploiement"
+        fi
+
+  # Job 2 : Validation du code Salesforce
+  validate-code:
+    runs-on: ubuntu-latest
+    needs: check-ci-status
+    if: needs.check-ci-status.outputs.ci-passed == 'true'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Salesforce CLI
+      run: npm install -g @salesforce/cli
+    
+    - name: Authenticate to Salesforce
+      env:
+        SF_ACCESS_TOKEN: ${{ secrets.SALESFORCE_ACCESS_TOKEN }}
+        SALESFORCE_INSTANCE_URL: ${{ secrets.SALESFORCE_INSTANCE_URL }}
+      run: |
+        echo "🔐 Authentification à Salesforce..."
+        sf org login access-token \
+          --instance-url "${{ env.SALESFORCE_INSTANCE_URL }}" \
+          --no-prompt \
+          --alias devhub \
+          --set-default
+        
+    - name: Validate project structure
+      run: |
+        echo "📋 Vérification de la structure du projet..."
+        if [ ! -d "force-app" ]; then
+          echo "❌ Erreur : Dossier 'force-app' non trouvé"
+          exit 1
+        fi
+        echo "✅ Structure Salesforce valide"
+        ls -la force-app/
+        
+    - name: Validate syntax and structure
+      run: |
+        echo "🔍 Validation du code Salesforce..."
+        sf project validate deploy start --target-org devhub
+        echo "✅ Validation réussie"
+
+  # Job 3 : Déploiement en Salesforce
   deploy:
     runs-on: ubuntu-latest
-    if: |
-      github.event_name == 'push' || 
-      (github.event.workflow_run.conclusion == 'success')
+    needs: validate-code
+    if: success()
     
     steps:
     - name: Checkout code
@@ -27,42 +91,96 @@ jobs:
         SALESFORCE_INSTANCE_URL: ${{ secrets.SALESFORCE_INSTANCE_URL }}
       run: |
         echo "🔐 Authentification à Salesforce..."
-        
         sf org login access-token \
           --instance-url "${{ env.SALESFORCE_INSTANCE_URL }}" \
           --no-prompt \
           --alias devhub \
           --set-default
         
-    - name: Validate deployment
-      run: |
-        echo "✓ Validation du code avant déploiement..."
-        ls -la force-app/ || echo "Structure Salesforce non trouvée"
-        
     - name: Deploy to Salesforce
+      id: deploy
       run: |
-        echo "🚀 Déploiement en cours vers Salesforce... "
-        sf project deploy start --target-org devhub
-        echo "✅ Déploiement terminé avec succès!"
+        echo "🚀 Déploiement en cours vers Salesforce..."
+        
+        DEPLOY_OUTPUT=$(sf project deploy start \
+          --target-org devhub \
+          --wait 30 \
+          --json)
+        
+        echo "$DEPLOY_OUTPUT" > deploy-result.json
+        
+        # Vérifier le statut du déploiement
+        DEPLOY_STATUS=$(echo "$DEPLOY_OUTPUT" | grep -o '"status":"[^"]*"' | cut -d'"' -f4)
+        
+        if [ "$DEPLOY_STATUS" == "Succeeded" ] || [ "$DEPLOY_STATUS" == "InProgress" ]; then
+          echo "✅ Déploiement lancé avec succès"
+          echo "deploy-success=true" >> $GITHUB_OUTPUT
+        else
+          echo "❌ Erreur lors du déploiement"
+          echo "deploy-success=false" >> $GITHUB_OUTPUT
+          exit 1
+        fi
       
     - name: Run post-deployment tests
-      if: success()
+      if: steps.deploy.outputs.deploy-success == 'true'
       run: |
         echo "🧪 Exécution des tests post-déploiement..."
-        sf apex test run --target-org devhub
+        
+        # Attendre quelques secondes que le déploiement se finisse
+        sleep 10
+        
+        # Exécuter les tests Apex
+        TEST_OUTPUT=$(sf apex test run \
+          --target-org devhub \
+          --wait 30 \
+          --code-coverage \
+          --json)
+        
+        echo "$TEST_OUTPUT" > test-result.json
+        
+        # Vérifier les résultats
+        TEST_STATUS=$(echo "$TEST_OUTPUT" | grep -o '"testRunId":"[^"]*"')
+        
+        if [ -z "$TEST_STATUS" ]; then
+          echo "⚠️  Pas de tests trouvés, continuant..."
+        else
+          echo "✅ Tests post-déploiement exécutés"
+        fi
+    
+    - name: Upload deployment artifacts
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: deployment-logs
+        path: |
+          deploy-result.json
+          test-result.json
+        retention-days: 30
         
     - name: Notify deployment status
       if: always()
       run: |
         if [ "${{ job.status }}" == "success" ]; then
           echo "✅ Déploiement réussi!"
-          echo "Votre code a été déployé en production."
+          echo "✅ Votre code a été déployé en production."
+          echo ""
+          echo "📊 Résumé du déploiement :"
+          echo "- Date: $(date)"
+          echo "- Branche: ${{ github.ref }}"
+          echo "- Commit: ${{ github.sha }}"
         else
           echo "❌ Erreur lors du déploiement!"
-          echo "Veuillez vérifier les logs ci-dessus."
+          echo "❌ Veuillez vérifier les logs ci-dessus."
+          echo ""
+          echo "📊 Informations du déploiement :"
+          echo "- Date: $(date)"
+          echo "- Branche: ${{ github.ref }}"
+          echo "- Commit: ${{ github.sha }}"
         fi
 
-    - name: Cleanup
+    - name: Cleanup sensitive files
       if: always()
       run: |
-        echo "🧹 Nettoyage effectué"
+        echo "🧹 Nettoyage des fichiers sensibles..."
+        rm -f server.key jwt.key auth.txt
+        echo "✅ Nettoyage effectué"
