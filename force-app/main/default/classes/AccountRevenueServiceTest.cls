@@ -46,11 +46,11 @@ private class AccountRevenueServiceTest {
         AccountRevenueService.updateRevenue(accounts);
         Test.stopTest();
 
-        // Vérification que le CA est 0 si aucune commande activée 
-        Account result = [SELECT Chiffre_d_affaire__c FROM Account WHERE Id = :acc.Id];
+        // Vérification que le Chiffre d'affaires est 0 si aucune commande activée 
+        Account result = [SELECT Chiffre_d_affaire__c FROM Account WHERE Id = :acc.Id]; 
         System.assertEquals(0, result.Chiffre_d_affaire__c, 'Le CA doit être 0 sans commande');
     }
- // Test pour vérifier que le service gère correctement plusieurs comptes avec des commandes activées !! r
+ // Test pour vérifier que le service gère correctement plusieurs comptes avec des commandes activées.
     @isTest
     static void testUpdateRevenue_plusieursComptes() {
 
@@ -80,11 +80,11 @@ private class AccountRevenueServiceTest {
         AccountRevenueService.updateRevenue(accounts);
         Test.stopTest();
 
-        // Vérification que les deux comptes ont le CA correct
+        // Vérification que les deux comptes ont le Chiffre d'affaires correct
         Map<Id, Account> results = new Map<Id, Account>(
             [SELECT Id, Chiffre_d_affaire__c FROM Account WHERE Id IN :new List<Id>{acc1.Id, acc2.Id}]
         );
         System.assertEquals(1000, results.get(acc1.Id).Chiffre_d_affaire__c, 'CA Compte A = 1000');
         System.assertEquals(1000, results.get(acc2.Id).Chiffre_d_affaire__c, 'CA Compte B = 1000');
     }
-}
+} 
