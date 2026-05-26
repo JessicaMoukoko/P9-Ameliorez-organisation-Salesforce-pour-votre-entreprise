@@ -50,7 +50,7 @@ private class AccountRevenueServiceTest {
         Account result = [SELECT Chiffre_d_affaire__c FROM Account WHERE Id = :acc.Id];
         System.assertEquals(0, result.Chiffre_d_affaire__c, 'Le CA doit être 0 sans commande');
     }
- // Test pour vérifier que le service gère correctement plusieurs comptes avec des commandes activées
+ // Test pour vérifier que le service gère correctement plusieurs comptes avec des commandes activées !! r
     @isTest
     static void testUpdateRevenue_plusieursComptes() {
 
