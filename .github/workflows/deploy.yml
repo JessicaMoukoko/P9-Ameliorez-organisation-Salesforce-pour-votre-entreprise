@@ -3,9 +3,9 @@ name: Déploiement Automatique (CD)
 on:
   push:
     branches: [ main ]
-  #workflow_run:
-   # workflows: ["Tests Automatisés (CI)"]
-   # types: [completed]
+  workflow_run:
+    workflows: ["Tests Automatisés (CI)"]
+    types: [completed]
 
 jobs:
   # Job 1 : Vérifier que les tests CI sont passés
