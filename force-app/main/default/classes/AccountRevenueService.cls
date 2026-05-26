@@ -1,5 +1,5 @@
 public class AccountRevenueService {
-
+ // Méthode pour mettre à jour le chiffre d'affaires de chaque compte en fonction des commandes activées associées
     public static void updateRevenue(List<Account> accounts) {
 
         List<Account> accountsToUpdate = new List<Account>();
