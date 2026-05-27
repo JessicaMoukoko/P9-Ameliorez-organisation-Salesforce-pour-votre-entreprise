@@ -212,9 +212,4 @@ jobs:
           echo "- Commit: ${{ github.sha }}"
         fi
 
-    - name: Cleanup sensitive files
-      if: always()
-      run: |
-        echo "🧹 Nettoyage des fichiers sensibles..."
-        rm -f server.key jwt.key auth.txt
-        echo "✅ Nettoyage effectué"
+    
