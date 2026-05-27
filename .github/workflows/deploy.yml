@@ -8,7 +8,7 @@ on:
     types: [completed]
 
 jobs:
-  # Job 1 : Vérifier que les tests CI sont passés
+  # Job 1 : Vérifier que les tests CI sont passés avec succes
   check-ci-status:
     runs-on: ubuntu-latest
     outputs:
