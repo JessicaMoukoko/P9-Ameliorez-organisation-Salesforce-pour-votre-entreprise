@@ -1,7 +1,5 @@
 public with sharing class OrderTriggerHandler {
 
-
-
     public static void handleAfterUpdate(List<Order> newOrders, Map<Id, Order> oldMap) {
 
         Set<Id> accountIds = new Set<Id>();
@@ -12,12 +10,10 @@ public with sharing class OrderTriggerHandler {
                 accountIds.add(ord.AccountId);
             }
         }
-
         // 2. Récupérer les comptes
         Map<Id, Account> accMap = new Map<Id, Account>(
             [SELECT Id, Chiffre_d_affaire__c FROM Account WHERE Id IN :accountIds]
         );
-
         // 3. Calcul du CA
         for (Order ord : newOrders) {
             Order oldOrd = oldMap.get(ord.Id);
@@ -34,7 +30,6 @@ public with sharing class OrderTriggerHandler {
                 }
             }
         }
-
         // 4. Update des comptes
         if (!accMap.isEmpty()) {
             update accMap.values();

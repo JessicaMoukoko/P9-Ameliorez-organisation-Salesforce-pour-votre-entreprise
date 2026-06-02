@@ -11,17 +11,11 @@ public class AccountRevenueService {
         Map<Id, Decimal> revenueByAccount = new Map<Id, Decimal>();
 
         for(AggregateResult ar : [
-
-            SELECT AccountId accId,
-                   SUM(TotalAmount) total
-            FROM Order
-            WHERE Status = 'Activated'
-            AND AccountId IN :accountIds
-            GROUP BY AccountId
-        ]){
-            revenueByAccount.put(
-                (Id) ar.get('accId'),
-                (Decimal) ar.get('total')
+            SELECT AccountId accId,   SUM(TotalAmount) total
+            FROM Order WHERE Status = 'Activated'
+            AND AccountId IN :accountIds GROUP BY AccountId]){
+                
+            revenueByAccount.put( (Id) ar.get('accId'),(Decimal) ar.get('total')
             );
         }
 
