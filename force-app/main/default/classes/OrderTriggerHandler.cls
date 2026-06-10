@@ -27,12 +27,14 @@ public with sharing class OrderTriggerHandler {
 
                     Decimal oldCA = acc.Chiffre_d_affaire__c != null ? acc.Chiffre_d_affaire__c : 0;
 
+      // On ajoute le montant total de la commande au CA existant du compte
                     acc.Chiffre_d_affaire__c = oldCA + ord.TotalAmount;
                 }
             }
         }
         // 4. Update des comptes
         if (!accMap.isEmpty()) {
+             
             update accMap.values();
         }
     }
