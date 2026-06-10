@@ -8,7 +8,7 @@ public class AccountRevenueService {
         for(Account acc : accounts){
             accountIds.add(acc.Id);
         }
-        // Requête agrégée
+        // Requête agrégée pour calculer le chiffre d'affaires total par compte
         Map<Id, Decimal> revenueByAccount = new Map<Id, Decimal>();
 
         for(AggregateResult ar : [
