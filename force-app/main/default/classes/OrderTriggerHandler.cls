@@ -21,6 +21,7 @@ public with sharing class OrderTriggerHandler {
             // Vérifier changement de statut vers Activated
             if (ord.Status == 'Activated' && oldOrd.Status != 'Activated') {
 
+                // Si le compte existe dans la map, on met à jour son CA
                 if (accMap.containsKey(ord.AccountId)) {
                     Account acc = accMap.get(ord.AccountId);
 
