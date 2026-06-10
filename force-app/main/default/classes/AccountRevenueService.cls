@@ -1,5 +1,7 @@
 public class AccountRevenueService {
 
+ // Méthode pour mettre à jour le chiffre d'affaires des comptes
+ 
     public static void updateRevenue(List<Account> accounts) {
 
         Set<Id> accountIds = new Set<Id>();
