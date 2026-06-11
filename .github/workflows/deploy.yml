@@ -1,215 +1,125 @@
-name: Déploiement Automatique (CD)
+name: CI/CD Pipeline - Tests et Deploiement Salesforce
 
+# Declencheurs :
+# - Pull Request vers main : CI uniquement (bloque le merge si echec)
+# - Push sur main : CI puis deploiement si CI reussie
 on:
+  pull_request:
+    branches:
+      - main
   push:
-    branches: [ main ]
-  workflow_run:
-    workflows: ["Tests Automatisés (CI)"]
-    types: [completed]
+    branches:
+      - main
 
 jobs:
-  # Job 1 : Vérifier que les tests CI sont passés avec succes
-  check-ci-status:
+
+  # ──────────────────────────────────────────
+  # JOB 1 - CI : Tests avant tout deploiement
+  # ──────────────────────────────────────────
+  ci:
+    name: "Tests CI"
     runs-on: ubuntu-latest
-    outputs:
-      ci-passed: ${{ steps.check.outputs.ci-passed }}
+
     steps:
-    - name: Check CI workflow status
-      id: check
-      run: |
-        if [ "${{ github.event_name }}" == "workflow_run" ]; then
-          if [ "${{ github.event.workflow_run.conclusion }}" == "success" ]; then
-            echo "ci-passed=true" >> $GITHUB_OUTPUT
-            echo "✅ Tests CI réussis - Déploiement autorisé"
-          else
-            echo "ci-passed=false" >> $GITHUB_OUTPUT
-            echo "❌ Tests CI échoués - Déploiement bloqué"
+      - name: Recuperer le code
+        uses: actions/checkout@v4
+
+      - name: Installer Node.js 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Installer les dependances npm
+        run: npm install
+
+      # Tests unitaires LWC avec Jest
+      # Si un test echoue, le job echoue et le deploiement est bloqué
+      - name: Lancer les tests LWC
+        run: npm run test:unit:coverage
+
+      # Verification que la couverture de code est superieure a 75%
+      # Jest s'en charge automatiquement grace au coverageThreshold dans package.json
+      - name: Verifier la couverture de code
+        run: |
+          echo "Verification de la couverture..."
+          if [ ! -f "coverage/coverage-summary.json" ]; then
+            echo "Erreur : fichier de couverture introuvable"
             exit 1
           fi
-        else
-          echo "ci-passed=true" >> $GITHUB_OUTPUT
-          echo "⏭️  Push direct sur main - Procédure de déploiement"
-        fi
+          COVERAGE=$(node -e "const data = require('./coverage/coverage-summary.json'); console.log(data.total.lines.pct)")
+          echo "Couverture actuelle : ${COVERAGE}%"
+          if [ $(echo "$COVERAGE < 75" | bc) -eq 1 ]; then
+            echo "Echec : couverture insuffisante (${COVERAGE}% < 75%)"
+            exit 1
+          fi
+          echo "OK : couverture suffisante (${COVERAGE}%)"
 
-  # Job 2 : Validation du code Salesforce
-  validate-code:
+      - name: Installer Salesforce CLI
+        run: npm install -g @salesforce/cli
+
+      - name: Authentification Salesforce
+        run: |
+          sf org login access-token \
+            --instance-url "${{ secrets.SALESFORCE_INSTANCE_URL }}" \
+            --no-prompt \
+            --alias target-org \
+            --set-default
+
+      # Validation dry-run : verifie le code ET lance les tests Apex
+      # --dry-run = pas de deploiement reel
+      # --test-level RunLocalTests = tous les tests Apex sont executes
+      # Salesforce bloque automatiquement si couverture < 75% ou test en echec
+      - name: Valider le code Salesforce (dry-run + tests Apex)
+        run: |
+          sf project deploy start \
+            --target-org target-org \
+            --source-dir force-app \
+            --dry-run \
+            --test-level RunLocalTests \
+            --wait 30
+
+  # ──────────────────────────────────────────────────────────────
+  # JOB 2 - CD : Deploiement uniquement si CI reussie + push main
+  # ──────────────────────────────────────────────────────────────
+  cd:
+    name: "Deploiement Salesforce"
     runs-on: ubuntu-latest
-    needs: check-ci-status
-    if: needs.check-ci-status.outputs.ci-passed == 'true'
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Setup Salesforce CLI
-      run: npm install -g @salesforce/cli
-    
-    - name: Authenticate to Salesforce
-      env:
-        SF_ACCESS_TOKEN: ${{ secrets.SALESFORCE_ACCESS_TOKEN }}
-        SALESFORCE_INSTANCE_URL: ${{ secrets.SALESFORCE_INSTANCE_URL }}
-      run: |
-        echo "🔐 Authentification à Salesforce..."
-        sf org login access-token \
-          --instance-url "${{ env.SALESFORCE_INSTANCE_URL }}" \
-          --no-prompt \
-          --alias devhub \
-          --set-default
-        
-    - name: Validate project structure
-      run: |
-        echo "📋 Vérification de la structure du projet..."
-        if [ ! -d "force-app" ]; then
-          echo "❌ Erreur : Dossier 'force-app' non trouvé"
-          exit 1
-        fi
-        echo "✅ Structure Salesforce valide"
-        ls -la force-app/
-        
-    - name: Validate syntax and structure
-      run: |
-        echo "🔍 Validation du code Salesforce (dry-run)..."
-        
-        sf project deploy start \
-          --target-org devhub \
-          --dry-run \
-          --wait 30
-        
-        echo "✅ Validation réussie - Code prêt pour déploiement"
+    needs: ci
+    if: success() && github.event_name == 'push' && github.ref == 'refs/heads/main'
 
-  # Job 3 : Déploiement en Salesforce
-  deploy:
-    runs-on: ubuntu-latest
-    needs: validate-code
-    if: success()
-    
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Setup Salesforce CLI
-      run: npm install -g @salesforce/cli
-        
-    - name: Authenticate to Salesforce
-      env:
-        SF_ACCESS_TOKEN: ${{ secrets.SALESFORCE_ACCESS_TOKEN }}
-        SALESFORCE_INSTANCE_URL: ${{ secrets.SALESFORCE_INSTANCE_URL }}
-      run: |
-        echo "🔐 Authentification à Salesforce..."
-        sf org login access-token \
-          --instance-url "${{ env.SALESFORCE_INSTANCE_URL }}" \
-          --no-prompt \
-          --alias devhub \
-          --set-default
-        
-    - name: Deploy to Salesforce
-      id: deploy
-      run: |
-        echo "🚀 Déploiement en cours vers Salesforce..."
-        
-        # Afficher les orgs disponibles
-        echo "📋 Orgs authentifiées :"
-        sf org list
-        
-        # Afficher la structure du projet
-        echo ""
-        echo "📁 Structure du projet :"
-        ls -la force-app/ || echo "Dossier force-app non trouvé"
-        
-        # Effectuer le déploiement avec output détaillé
-        echo ""
-        echo "🔄 Démarrage du déploiement..."
-        
-        DEPLOY_OUTPUT=$(sf project deploy start \
-          --target-org devhub \
-          --wait 60 \
-          --json 2>&1)
-        
-        echo "$DEPLOY_OUTPUT" > deploy-result.json
-        
-        echo ""
-        echo "📊 Résultat du déploiement :"
-        echo "$DEPLOY_OUTPUT"
-        
-        # Vérifier si le déploiement a réussi (chercher "status": "Succeeded" avec espaces)
-        if echo "$DEPLOY_OUTPUT" | grep -q '"status".*"Succeeded"'; then
-          echo ""
-          echo "✅ Déploiement réussi"
-          DEPLOY_ID=$(echo "$DEPLOY_OUTPUT" | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4)
-          echo "Deploy ID: $DEPLOY_ID"
-          echo "deploy-success=true" >> $GITHUB_OUTPUT
-        elif echo "$DEPLOY_OUTPUT" | grep -q '"status".*"InProgress"'; then
-          echo ""
-          echo "⏳ Déploiement en cours"
-          echo "deploy-success=true" >> $GITHUB_OUTPUT
-        else
-          echo ""
-          echo "❌ Erreur lors du déploiement"
-          echo "deploy-success=false" >> $GITHUB_OUTPUT
-          exit 1
-        fi
-      
-    - name: Run post-deployment tests
-      if: steps.deploy.outputs.deploy-success == 'true'
-      run: |
-        echo "🧪 Exécution des tests post-déploiement..."
-        
-        # Attendre quelques secondes que le déploiement se finisse
-        sleep 10
-        
-        echo "🔄 Exécution des tests Apex..."
-        
-        # Exécuter les tests avec la bonne commande
-        TEST_OUTPUT=$(sf apex run test \
-          --target-org devhub \
-          --wait 60 \
-          --json 2>&1) || true
-        
-        echo "$TEST_OUTPUT" > test-result.json
-        
-        echo ""
-        echo "📊 Résultat des tests :"
-        echo "$TEST_OUTPUT"
-        
-        # Vérifier s'il y a des tests
-        if echo "$TEST_OUTPUT" | grep -q "numTestsRun\|testRunId"; then
-          echo ""
-          echo "✅ Tests exécutés avec succès"
-        else
-          echo ""
-          echo "⚠️  Pas de tests Apex trouvés dans le projet"
-          echo "    Les tests seront exécutés lors du déploiement suivant"
-        fi
-    
-    - name: Upload deployment artifacts
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: deployment-logs
-        path: |
-          deploy-result.json
-          test-result.json
-        retention-days: 30
-        
-    - name: Notify deployment status
-      if: always()
-      run: |
-        if [ "${{ job.status }}" == "success" ]; then
-          echo "✅ Déploiement réussi!"
-          echo "✅ Votre code a été déployé en production."
-          echo ""
-          echo "📊 Résumé du déploiement :"
-          echo "- Date: $(date)"
-          echo "- Branche: ${{ github.ref }}"
-          echo "- Commit: ${{ github.sha }}"
-        else
-          echo "❌ Erreur lors du déploiement!"
-          echo "❌ Veuillez vérifier les logs ci-dessus."
-          echo ""
-          echo "📊 Informations du déploiement :"
-          echo "- Date: $(date)"
-          echo "- Branche: ${{ github.ref }}"
-          echo "- Commit: ${{ github.sha }}"
-        fi
+      - name: Recuperer le code
+        uses: actions/checkout@v4
 
-    
+      - name: Installer Salesforce CLI
+        run: npm install -g @salesforce/cli
+
+      - name: Authentification Salesforce
+        run: |
+          sf org login access-token \
+            --instance-url "${{ secrets.SALESFORCE_INSTANCE_URL }}" \
+            --no-prompt \
+            --alias target-org \
+            --set-default
+
+      # Deploiement reel avec tests Apex integres
+      # --test-level RunLocalTests = les tests sont executes PENDANT le deploiement
+      # Si un test echoue ou couverture < 75% : Salesforce annule le deploiement
+      - name: Deployer vers Salesforce
+        run: |
+          sf project deploy start \
+            --target-org target-org \
+            --source-dir force-app \
+            --test-level RunLocalTests \
+            --wait 60
+
+      - name: Resume du deploiement
+        if: always()
+        run: |
+          if [ "${{ job.status }}" == "success" ]; then
+            echo "Deploiement reussi !"
+          else
+            echo "Deploiement echoue - voir les logs ci-dessus"
+          fi
+          echo "Date    : $(date)"
+          echo "Commit  : ${{ github.sha }}"
