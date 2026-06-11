@@ -40,19 +40,19 @@ jobs:
       - name: Installer Salesforce CLI
         run: npm install -g @salesforce/cli
 
-      - name: Auth Salesforce FIX
-        run: |
-              set -e
+      - name: Auth Salesforce SAFE
+      run: |
+          set -e
+          sf --version
       
-               echo "Authentification Salesforce..."
-                sf --version
+          echo "Logging into Salesforce..."
       
-              CLEAN_URL=$(printf "%s" "$SF_INSTANCE_URL" | tr -d '\r')
-      
-               printf "%s" "$SF_ACCESS_TOKEN" | sf org login access-token \
-              --instance-url "$CLEAN_URL" \
-                --alias target-org \
-                --set-default
+          sf org login access-token \
+            --instance-url "${SF_INSTANCE_URL}" \
+            --access-token "${SF_ACCESS_TOKEN}" \
+            --alias target-org \
+            --set-default \
+            --no-prompt
 
       - name: Valider le code Salesforce (dry-run + tests Apex)
         run: |
