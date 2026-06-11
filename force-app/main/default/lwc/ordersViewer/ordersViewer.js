@@ -6,7 +6,7 @@ import CalculateTotalAmount from '@salesforce/apex/AccountTotalAmountController.
 export default class ordersViewer extends LightningElement {
 
     @api recordId;
-    hasError = true;
+    hasError = false;
     hasSuccess = false;
     sumOrdersOfCurrentAccount;
     error;  
