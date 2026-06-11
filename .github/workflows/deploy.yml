@@ -37,23 +37,6 @@ jobs:
       - name: Lancer les tests LWC
         run: npm run test:unit:coverage
 
-      # Verification que la couverture de code est superieure a 75%
-      # Jest s'en charge automatiquement grace au coverageThreshold dans package.json
-      - name: Verifier la couverture de code
-        run: |
-          echo "Verification de la couverture..."
-          if [ ! -f "coverage/coverage-summary.json" ]; then
-            echo "Erreur : fichier de couverture introuvable"
-            exit 1
-          fi
-          COVERAGE=$(node -e "const data = require('./coverage/coverage-summary.json'); console.log(data.total.lines.pct)")
-          echo "Couverture actuelle : ${COVERAGE}%"
-          if [ $(echo "$COVERAGE < 75" | bc) -eq 1 ]; then
-            echo "Echec : couverture insuffisante (${COVERAGE}% < 75%)"
-            exit 1
-          fi
-          echo "OK : couverture suffisante (${COVERAGE}%)"
-
       - name: Installer Salesforce CLI
         run: npm install -g @salesforce/cli
 
