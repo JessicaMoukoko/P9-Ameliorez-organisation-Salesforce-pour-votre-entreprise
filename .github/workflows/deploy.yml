@@ -41,12 +41,12 @@ jobs:
         run: npm install -g @salesforce/cli
 
       - name: Auth Salesforce SAFE
-      run: |
+        run: |
           set -e
           sf --version
-      
+
           echo "Logging into Salesforce..."
-      
+
           sf org login access-token \
             --instance-url "${SF_INSTANCE_URL}" \
             --access-token "${SF_ACCESS_TOKEN}" \
@@ -64,7 +64,7 @@ jobs:
             --wait 30
 
   # ──────────────────────────────────────────────────────────────
-  # JOB 2 - CD
+  # JOB 2 - Continuous Deployment (CD)
   # ──────────────────────────────────────────────────────────────
   cd:
     name: "Deploiement Salesforce"
