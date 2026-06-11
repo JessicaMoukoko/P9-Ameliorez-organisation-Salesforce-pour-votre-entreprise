@@ -1,43 +1,31 @@
 public with sharing class OrderTriggerHandler {
 
-    public static void handleAfterUpdate(List<Order> newOrders, Map<Id, Order> oldMap) {
+    public static void handleBefore( List<Order> newOrders) {
+
+        OrderAmountService.calculateNetAmount( newOrders );
+    }
+
+    public static void handleAfterUpdate( List<Order> newOrders, Map<Id, Order> oldMap) {
 
         Set<Id> accountIds = new Set<Id>();
 
-        // 1. Récupérer les comptes concernés
-        for (Order ord : newOrders) {
-            if (ord.AccountId != null && ord.Status == 'Activated' && oldMap.get(ord.Id).Status != 'Activated') {
-                accountIds.add(ord.AccountId);
-            }
-        }
-        // 2. Récupérer les comptes
-        Map<Id, Account> accMap = new Map<Id, Account>(
-            [SELECT Id, Chiffre_d_affaire__c FROM Account WHERE Id IN :accountIds]
-        );
-        // 3. Calcul du CA
         for (Order ord : newOrders) {
             Order oldOrd = oldMap.get(ord.Id);
 
-            // Vérifier changement de statut vers Activated
-            if (ord.Status == 'Activated' && oldOrd.Status != 'Activated') {
+            if (ord.AccountId != null && ( ord.Status != oldOrd.Status || ord.TotalAmount != oldOrd.TotalAmount)) {
 
-                // Si le compte existe dans la map, on met à jour son CA
-                if (accMap.containsKey(ord.AccountId)) {
-                    Account acc = accMap.get(ord.AccountId);
-
-                    Decimal oldCA = acc.Chiffre_d_affaire__c != null ? acc.Chiffre_d_affaire__c : 0;
-
-      // On ajoute le montant total de la commande au CA existant du compte
-                    acc.Chiffre_d_affaire__c = oldCA + ord.TotalAmount;
-                }
+                accountIds.add(ord.AccountId);
             }
         }
-        // 4. Update des comptes
-        if (!accMap.isEmpty()) {
-             
-            update accMap.values();
+        if (accountIds.isEmpty()) {
+            return;
         }
+        List<Account> accounts = [
+            SELECT Id
+            FROM Account
+            WHERE Id IN :accountIds
+        ];
+
+        AccountRevenueService.updateRevenue(accounts);
     }
-
-
 }
