@@ -8,6 +8,10 @@ on:
     branches:
       - main
 
+# Force Node.js 24 pour les actions GitHub (Node.js 20 est deprecie depuis juin 2026)
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
 
   # ──────────────────────────────────────────
@@ -21,18 +25,13 @@ jobs:
       - name: Recuperer le code
         uses: actions/checkout@v4
 
-      - name: Installer Node.js 18
+      - name: Installer Node.js 20
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20
 
       - name: Installer les dependances npm
         run: npm install
-
-      - name: Debug instance URL
-        run: |
-          echo "INSTANCE URL raw:"
-          printf "%s" "${SF_INSTANCE_URL}" | cat -A
 
       - name: Lancer les tests LWC
         run: npm run test:unit:coverage
@@ -40,16 +39,14 @@ jobs:
       - name: Installer Salesforce CLI
         run: npm install -g @salesforce/cli
 
-      - name: Auth Salesforce SAFE
+      - name: Authentification Salesforce
+        env:
+          SF_INSTANCE_URL: ${{ secrets.SALESFORCE_INSTANCE_URL }}
+          SF_ACCESS_TOKEN: ${{ secrets.SALESFORCE_ACCESS_TOKEN }}
         run: |
-          set -e
-          sf --version
-
-          echo "Logging into Salesforce..."
-
           sf org login access-token \
-            --instance-url "${SF_INSTANCE_URL}" \
-            --access-token "${SF_ACCESS_TOKEN}" \
+            --instance-url "$SF_INSTANCE_URL" \
+            --access-token "$SF_ACCESS_TOKEN" \
             --alias target-org \
             --set-default \
             --no-prompt
@@ -76,6 +73,11 @@ jobs:
       - name: Recuperer le code
         uses: actions/checkout@v4
 
+      - name: Installer Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
       - name: Installer Salesforce CLI
         run: npm install -g @salesforce/cli
 
@@ -88,7 +90,8 @@ jobs:
             --instance-url "$SF_INSTANCE_URL" \
             --access-token "$SF_ACCESS_TOKEN" \
             --alias target-org \
-            --set-default
+            --set-default \
+            --no-prompt
 
       - name: Deployer vers Salesforce
         run: |
