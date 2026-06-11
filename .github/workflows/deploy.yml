@@ -1,8 +1,5 @@
 name: CI/CD Pipeline - Tests et Deploiement Salesforce
 
-# Declencheurs :
-# - Pull Request vers main : CI uniquement (bloque le merge si echec)
-# - Push sur main : CI puis deploiement si CI reussie
 on:
   pull_request:
     branches:
@@ -14,7 +11,7 @@ on:
 jobs:
 
   # ──────────────────────────────────────────
-  # JOB 1 - CI : Tests avant tout deploiement
+  # JOB 1 - CI
   # ──────────────────────────────────────────
   ci:
     name: "Tests CI"
@@ -32,8 +29,6 @@ jobs:
       - name: Installer les dependances npm
         run: npm install
 
-      # Tests unitaires LWC avec Jest
-      # Si un test echoue, le job echoue et le deploiement est bloqué
       - name: Lancer les tests LWC
         run: npm run test:unit:coverage
 
@@ -41,20 +36,16 @@ jobs:
         run: npm install -g @salesforce/cli
 
       - name: Authentification Salesforce
-      env:
-        SF_INSTANCE_URL: ${{ secrets.SALESFORCE_INSTANCE_URL }}
-        SF_ACCESS_TOKEN: ${{ secrets.SALESFORCE_ACCESS_TOKEN }}
-      run: |
-        sf org login access-token \
-          --instance-url "$SF_INSTANCE_URL" \
-          --access-token "$SF_ACCESS_TOKEN" \
-          --alias target-org \
-          --set-default
+        env:
+          SF_INSTANCE_URL: ${{ secrets.SALESFORCE_INSTANCE_URL }}
+          SF_ACCESS_TOKEN: ${{ secrets.SALESFORCE_ACCESS_TOKEN }}
+        run: |
+          sf org login access-token \
+            --instance-url "$SF_INSTANCE_URL" \
+            --access-token "$SF_ACCESS_TOKEN" \
+            --alias target-org \
+            --set-default
 
-      # Validation dry-run : verifie le code ET lance les tests Apex
-      # --dry-run = pas de deploiement reel
-      # --test-level RunLocalTests = tous les tests Apex sont executes
-      # Salesforce bloque automatiquement si couverture < 75% ou test en echec
       - name: Valider le code Salesforce (dry-run + tests Apex)
         run: |
           sf project deploy start \
@@ -65,7 +56,7 @@ jobs:
             --wait 30
 
   # ──────────────────────────────────────────────────────────────
-  # JOB 2 - CD : Deploiement uniquement si CI reussie + push main
+  # JOB 2 - CD
   # ──────────────────────────────────────────────────────────────
   cd:
     name: "Deploiement Salesforce"
@@ -91,9 +82,6 @@ jobs:
             --alias target-org \
             --set-default
 
-      # Deploiement reel avec tests Apex integres
-      # --test-level RunLocalTests = les tests sont executes PENDANT le deploiement
-      # Si un test echoue ou couverture < 75% : Salesforce annule le deploiement
       - name: Deployer vers Salesforce
         run: |
           sf project deploy start \
