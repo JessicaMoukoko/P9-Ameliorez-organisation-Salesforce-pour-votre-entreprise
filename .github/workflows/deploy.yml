@@ -46,7 +46,6 @@ jobs:
         run: |
           sf org login access-token \
             --instance-url "$SF_INSTANCE_URL" \
-            --access-token "$SF_ACCESS_TOKEN" \
             --alias target-org \
             --set-default \
             --no-prompt
@@ -88,7 +87,6 @@ jobs:
         run: |
           sf org login access-token \
             --instance-url "$SF_INSTANCE_URL" \
-            --access-token "$SF_ACCESS_TOKEN" \
             --alias target-org \
             --set-default \
             --no-prompt
