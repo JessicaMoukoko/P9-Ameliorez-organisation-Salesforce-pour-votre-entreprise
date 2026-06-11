@@ -8,7 +8,7 @@ public with sharing class AccountTotalAmountController {
             AggregateResult result = [
                 SELECT SUM(TotalAmount) total
                 FROM Order
-                WHERE AccountId = :accId
+                WHERE AccountId = :accId AND Status = 'Activated'
             ];
 
             Decimal montantFinal = (Decimal) result.get('total');
