@@ -29,25 +29,30 @@ jobs:
       - name: Installer les dependances npm
         run: npm install
 
+      - name: Debug instance URL
+        run: |
+          echo "INSTANCE URL raw:"
+          printf "%s" "${SF_INSTANCE_URL}" | cat -A
+
       - name: Lancer les tests LWC
         run: npm run test:unit:coverage
 
       - name: Installer Salesforce CLI
         run: npm install -g @salesforce/cli
 
-      - name: Authentification Salesforce
-        env:
-          SF_INSTANCE_URL: ${{ secrets.SALESFORCE_INSTANCE_URL }}
-          SF_ACCESS_TOKEN: ${{ secrets.SALESFORCE_ACCESS_TOKEN }}
+      - name: Auth Salesforce FIX
         run: |
-          echo "Authentification Salesforce..."
-          sf --version
+              set -e
       
-          sf org login access-token \
-            --instance-url "${SF_INSTANCE_URL}" \
-            --access-token "${SF_ACCESS_TOKEN}" \
-            --alias target-org \
-            --set-default
+               echo "Authentification Salesforce..."
+                sf --version
+      
+              CLEAN_URL=$(printf "%s" "$SF_INSTANCE_URL" | tr -d '\r')
+      
+               printf "%s" "$SF_ACCESS_TOKEN" | sf org login access-token \
+              --instance-url "$CLEAN_URL" \
+                --alias target-org \
+                --set-default
 
       - name: Valider le code Salesforce (dry-run + tests Apex)
         run: |
