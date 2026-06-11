@@ -33,7 +33,7 @@ private class OrderAmountServiceTest {
             FROM Order
             WHERE Id = :ord.Id
         ];
-
+   // Test de la méthode de calcul du NetAmount
         Test.startTest();
         OrderAmountService.calculateNetAmount(new List<Order>{ ord });
         Test.stopTest();
