@@ -24,10 +24,10 @@ jobs:
       - name: Recuperer le code
         uses: actions/checkout@v4
 
-      - name: Installer Node.js 24
+      - name: Installer Node.js 20
         uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: 20
 
       - name: Installer dependances npm
         run: npm install
@@ -38,29 +38,24 @@ jobs:
       - name: Installer Salesforce CLI
         run: npm install -g @salesforce/cli
 
-      # ────────────────
-      # AUTH SALESFORCE (FIX IMPORTANT)
-      # ────────────────
       - name: Authentification Salesforce
         env:
           SF_INSTANCE_URL: ${{ secrets.SALESFORCE_INSTANCE_URL }}
           SF_ACCESS_TOKEN: ${{ secrets.SALESFORCE_ACCESS_TOKEN }}
         run: |
-          echo "$SF_ACCESS_TOKEN" | sfdx auth:accesstoken:store \
+          sf org login access-token \
             --instance-url "$SF_INSTANCE_URL" \
-            --setdefaultusername \
-            --alias target-org
+            --alias target-org \
+            --set-default \
+            --no-prompt
 
-      # ────────────────
-      # VALIDATION DEPLOY
-      # ────────────────
-      - name: Validation du code Salesforce (dry-run)
+      - name: Validation du code Salesforce (dry-run + tests Apex)
         run: |
-          sfdx force:source:deploy \
-            -p force-app \
-            -u target-org \
-            --checkonly \
-            --testlevel RunLocalTests \
+          sf project deploy start \
+            --target-org target-org \
+            --source-dir force-app \
+            --dry-run \
+            --test-level RunLocalTests \
             --wait 30
 
   # ──────────────────────────────────────────
@@ -76,41 +71,33 @@ jobs:
       - name: Recuperer le code
         uses: actions/checkout@v4
 
-      - name: Installer Node.js 24
+      - name: Installer Node.js 20
         uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: 20
 
       - name: Installer Salesforce CLI
         run: npm install -g @salesforce/cli
 
-      # ────────────────
-      # AUTH SALESFORCE
-      # ────────────────
       - name: Authentification Salesforce
         env:
           SF_INSTANCE_URL: ${{ secrets.SALESFORCE_INSTANCE_URL }}
           SF_ACCESS_TOKEN: ${{ secrets.SALESFORCE_ACCESS_TOKEN }}
         run: |
-          echo "$SF_ACCESS_TOKEN" | sfdx auth:accesstoken:store \
+          sf org login access-token \
             --instance-url "$SF_INSTANCE_URL" \
-            --setdefaultusername \
-            --alias target-org
+            --alias target-org \
+            --set-default \
+            --no-prompt
 
-      # ────────────────
-      # DEPLOIEMENT
-      # ────────────────
       - name: Deploiement vers Salesforce
         run: |
-          sfdx force:source:deploy \
-            -p force-app \
-            -u target-org \
-            --testlevel RunLocalTests \
+          sf project deploy start \
+            --target-org target-org \
+            --source-dir force-app \
+            --test-level RunLocalTests \
             --wait 60
 
-      # ────────────────
-      # RESUME
-      # ────────────────
       - name: Resume du deploiement
         if: always()
         run: |
