@@ -36,15 +36,9 @@ private class AccountRevenueServiceTest {
         AccountRevenueService.updateRevenue(new List<Account>{ acc });
         Test.stopTest();
 
-        Account result = [
-            SELECT Chiffre_d_affaire__c
-            FROM Account
-            WHERE Id = :acc.Id
-        ];
+        Account result = [SELECT Chiffre_d_affaire__c FROM Account WHERE Id = :acc.Id];
 
         System.assert(
-            result.Chiffre_d_affaire__c > 0,
-            'CA doit être calculé'
-        );
+            result.Chiffre_d_affaire__c > 0,  'CA doit être calculé' );
     }
 }

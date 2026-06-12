@@ -1,5 +1,5 @@
 name: CI/CD Pipeline - Tests et Deploiement Salesforce
-
+# Ce workflow GitHub Actions est conçu pour automatiser les tests et le déploiement de votre projet Salesforce.
 on:
   pull_request:
     branches:
