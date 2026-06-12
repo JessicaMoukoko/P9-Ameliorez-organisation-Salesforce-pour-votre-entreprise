@@ -19,6 +19,7 @@ public class AccountRevenueService {
             revenueByAccount.put( (Id) ar.get('accId'),(Decimal) ar.get('total') // cast pour éviter les erreurs de type
             );
         }
+        // Prépare la liste des comptes à mettre à jour avec le nouveau chiffre d'affaires
         List<Account> accountsToUpdate = new List<Account>();
 
         for(Account acc : accounts){
