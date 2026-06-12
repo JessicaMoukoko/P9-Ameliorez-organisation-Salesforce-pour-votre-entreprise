@@ -23,7 +23,7 @@ public class AccountRevenueService {
 
         for(Account acc : accounts){
 
-      // vérifie si l'ID du compte existe dans la map revenueByAccount(si oui, elle récupère son chiffre d'affaires, si non elle attribue la valeur 0 à totalRevenue)
+      // vérifie si l'ID du compte existe dans la map revenueByAccount(si oui, elle récupère son chiffre d'affaires,si non elle attribue la valeur 0 à totalRevenue)
       
             Decimal totalRevenue = revenueByAccount.containsKey(acc.Id)   ? revenueByAccount.get(acc.Id): 0;
 

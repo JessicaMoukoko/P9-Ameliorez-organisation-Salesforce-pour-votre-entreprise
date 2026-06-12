@@ -2,6 +2,8 @@ public with sharing class OrderTriggerHandler {
 
     public static void handleBefore( List<Order> newOrders) {
 
+ // appel du service pour calculer le montant net de la commande
+
         OrderAmountService.calculateNetAmount( newOrders );
     }
 
@@ -25,7 +27,7 @@ public with sharing class OrderTriggerHandler {
             FROM Account
             WHERE Id IN :accountIds
         ];
-
+ // appel du service pour mettre à jour le revenu total de chaque compte
         AccountRevenueService.updateRevenue(accounts);
     }
 }

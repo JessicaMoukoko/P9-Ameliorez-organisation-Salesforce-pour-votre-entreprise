@@ -18,7 +18,6 @@ private class AccountRevenueServiceTest {
         insert pbe;
 
         Order order = TestDataFactory.createOrder(acc.Id);
-
           OrderItem oi = new OrderItem(
            OrderId = order.Id,
            PricebookEntryId = pbe.Id,
@@ -38,7 +37,6 @@ private class AccountRevenueServiceTest {
 
         Account result = [SELECT Chiffre_d_affaire__c FROM Account WHERE Id = :acc.Id];
 
-        System.assert(
-            result.Chiffre_d_affaire__c > 0,  'CA doit être calculé' );
+        System.assert(result.Chiffre_d_affaire__c > 0,  'CA doit être calculé');
     }
 }
